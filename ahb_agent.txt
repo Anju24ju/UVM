@@ -1,0 +1,52 @@
+//ahb agent
+
+`include "ahb_sequencer.sv"
+`include "ahb_driver.sv"
+`include "ahb_monitor.sv"
+
+class ahb_agent extends uvm_agent;
+    `uvm_component_utils (ahb_agent)
+    
+    //handles
+    ahb_driver hdriver;
+    ahb_sequencer hsequencer;
+    ahb_monitor hmonitor;
+
+   function new(string name, uvm_component parent);
+        super.new(name,parent);
+        //config_db set in top.sv 
+        uvm_config_db #(uvm_active_passive_enum)::get(this,"","is_ahb_active", is_active);
+    endfunction
+ 
+    //build phase
+    function void build_phase(uvm_phase phase);
+        `uvm_info("ID","Build_phase of agent",UVM_HIGH)
+        //From config_db, it checks if the agent is active
+        if(is_active == UVM_ACTIVE)
+          begin
+            hdriver = ahb_driver::type_id::create("AHB_DRIVER", this);
+            hsequencer = ahb_sequencer::type_id::create("AHB_SEQUENCER", this);
+            `uvm_info("ID","Instance of driver and sequencer created", UVM_MEDIUM)
+            end
+
+            hmonitor = ahb_monitor::type_id::create("AHB_MONITOR", this);
+            `uvm_info("ID","Instance of monitor created", UVM_MEDIUM)
+    endfunction
+
+    //connect_phase
+    function void connect_phase (uvm_phase phase);
+       `uvm_info("ID","Connect_phase of agent",UVM_HIGH)
+       if(is_active == UVM_ACTIVE)
+        begin
+            //Connect driver port to sequencer export for communication between driver and sequencer 
+            hdriver.seq_item_port.connect(hsequencer.seq_item_export);
+            `uvm_info("ID","AHB driver and sequencer are connected", UVM_MEDIUM)
+        end
+     endfunction
+
+endclass
+
+        
+
+    
+
